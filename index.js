@@ -2,6 +2,9 @@ const express = require("express");
 const axios = require("axios");
 const app = express();
 
+//saber quien
+let ultimaActivacion = null;
+
 app.use(express.json());
 
 const VERIFY_TOKEN = "mi_token_seguro"; // luego lo usarás en Meta
@@ -43,11 +46,59 @@ app.post("/webhook", async (req, res) => {
 
       if (textoNormalizado === "#EMERGENCIA" && autorizado) {
         console.log("🚨 ACTIVANDO SIRENA - Usuario autorizado");
+        
+        ultimaActivacion = {
+        numero: numero,
+        fecha: new Date().toLocaleString()
+      };
 
         await axios.get("https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc");
 
-      } else if (textoNormalizado === "#EMERGENCIA" && !autorizado) {
+      } 
+        else if (textoNormalizado === "#EMERGENCIA" && !autorizado) {
         console.log("⛔ Intento NO autorizado desde:", numero);
+      }
+
+            if (textoNormalizado === "#QUIEN") {
+      
+        if (ultimaActivacion) {
+          console.log("📋 Consulta de última activación");
+      
+          const respuesta = `📋 Última activación:\nNúmero: ${ultimaActivacion.numero}\nHora: ${ultimaActivacion.fecha}`;
+      
+          await axios.post(
+            `https://graph.facebook.com/v18.0/TU_PHONE_NUMBER_ID/messages`,
+            {
+              messaging_product: "whatsapp",
+              to: numero,
+              text: { body: respuesta }
+            },
+            {
+              headers: {
+                Authorization: `Bearer TU_TOKEN`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+      
+        } else {
+          const respuesta = "⚠️ Aún no se ha activado la sirena.";
+      
+          await axios.post(
+            `https://graph.facebook.com/v18.0/TU_PHONE_NUMBER_ID/messages`,
+            {
+              messaging_product: "whatsapp",
+              to: numero,
+              text: { body: respuesta }
+            },
+            {
+              headers: {
+                Authorization: `Bearer TU_TOKEN`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+        }
       }
     }
 
@@ -62,5 +113,6 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo"));
+
 
 
