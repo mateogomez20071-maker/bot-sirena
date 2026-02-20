@@ -65,9 +65,12 @@ app.post("/webhook", async (req, res) => {
           console.log("📋 Consulta de última activación");
       
           const respuesta = `📋 Última activación:\nNúmero: ${ultimaActivacion.numero}\nHora: ${ultimaActivacion.fecha}`;
+
+          const PHONE_NUMBER_ID = "996743346852082";
+          const TOKEN = "EAANHyn3VcmUBQZBryRJeSVgWpCGvMGYUR6tA5rqLGNRYfL6wJssdPTGLaAEBJSM9UkkbOcAZAwXlZCZBvWKKsWAKoS7f3jZCd9hAeIZB1xJUpsZBJksYZCzBXeUDBGGHcO1VWtqm1bhdsszM8phZBtWLIhPM750v0bN08S8i85V9o0DCG6x30c5r4BcBL6JsCTE8wIyLtZBvSJtI7rqv0ZC6I8iALLNvm834b0ZCJ3JhZAh1WoNjJHsWGydogpB1Cm9BsN6SZA93fQameiA2Y0iIdEOwv9";
       
           await axios.post(
-            `https://graph.facebook.com/v18.0/TU_PHONE_NUMBER_ID/messages`,
+            `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
             {
               messaging_product: "whatsapp",
               to: numero,
@@ -75,7 +78,7 @@ app.post("/webhook", async (req, res) => {
             },
             {
               headers: {
-                Authorization: `Bearer TU_TOKEN`,
+                Authorization: `Bearer ${TOKEN}`,
                 "Content-Type": "application/json"
               }
             }
@@ -85,7 +88,7 @@ app.post("/webhook", async (req, res) => {
           const respuesta = "⚠️ Aún no se ha activado la sirena.";
       
           await axios.post(
-            `https://graph.facebook.com/v18.0/TU_PHONE_NUMBER_ID/messages`,
+            `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
             {
               messaging_product: "whatsapp",
               to: numero,
@@ -93,7 +96,7 @@ app.post("/webhook", async (req, res) => {
             },
             {
               headers: {
-                Authorization: `Bearer TU_TOKEN`,
+                Authorization: `Bearer ${TOKEN}`,
                 "Content-Type": "application/json"
               }
             }
