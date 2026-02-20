@@ -103,6 +103,26 @@ app.post("/webhook", async (req, res) => {
           console.log("⛔ Intento NO autorizado desde:", numero);
         }
       }
+            // --- COMANDO APAGAR ---
+      if (textoNormalizado === "#APAGAR") {
+        if (autorizado) {
+          console.log("🛑 APAGANDO SIRENA - Usuario autorizado");
+      
+          await axios.get(IFTTT_OFF_URL);
+      
+          const mensajeAlerta =
+            `🛑 SIRENA APAGADA\n` +
+            `Apagado por: ${numero}\n` +
+            `Hora: ${new Date().toLocaleString()}`;
+      
+          for (const admin of ADMIN_NUMEROS) {
+            await enviarMensaje(admin, mensajeAlerta);
+          }
+      
+        } else {
+          console.log("⛔ Intento NO autorizado de apagar desde:", numero);
+        }
+      }
     }
 
     // Obligatorio para WhatsApp
@@ -113,32 +133,14 @@ app.post("/webhook", async (req, res) => {
     return res.sendStatus(500);
   }
 
-  // --- COMANDO APAGAR ---
-if (textoNormalizado === "#APAGAR") {
-  if (autorizado) {
-    console.log("🛑 APAGANDO SIRENA - Usuario autorizado");
-
-    await axios.get(IFTTT_OFF_URL);
-
-    const mensajeAlerta =
-      `🛑 SIRENA APAGADA\n` +
-      `Apagado por: ${numero}\n` +
-      `Hora: ${new Date().toLocaleString()}`;
-
-    for (const admin of ADMIN_NUMEROS) {
-      await enviarMensaje(admin, mensajeAlerta);
-    }
-
-  } else {
-    console.log("⛔ Intento NO autorizado de apagar desde:", numero);
-  }
-}
+  
   
 });
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
+
 
 
 
