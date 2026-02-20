@@ -5,7 +5,7 @@ const app = express();
 app.use(express.json());
 
 const VERIFY_TOKEN = "mi_token_seguro"; // luego lo usarás en Meta
-const NUMERO_PERMITIDO = "+573103532444"; // tu numero con codigo pais
+const NUMERO_PERMITIDO = "+15551739245"; // tu numero con codigo pais
 const ESP_URL = "http://192.168.1.50/activar"; // IP de tu ESP
 
 // verificacion de webhook
