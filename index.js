@@ -5,8 +5,11 @@ const app = express();
 app.use(express.json());
 
 const VERIFY_TOKEN = "mi_token_seguro"; // luego lo usarás en Meta
-const NUMERO_PERMITIDO = "15551739245"; // tu numero con codigo pais
-const ESP_URL = "http://192.168.1.50/activar"; // IP de tu ESP
+
+const NUMEROS_PERMITIDOS = [
+  "15551739245", 
+  "573103532444"
+];
 
 // verificacion de webhook
 app.get("/webhook", (req, res) => {
@@ -32,30 +35,29 @@ app.post("/webhook", async (req, res) => {
       const texto = message.text.body;
       const numero = message.from;
 
-      console.log("Mensaje:", texto);
+      console.log("Mensaje:", texto, "De:", numero);
 
-      if (texto.trim().toUpperCase() === "#EMERGENCIA") {
-        console.log("🚨 ACTIVANDO SIRENA");
+      const textoNormalizado = texto.trim().toUpperCase();
+      const autorizado = NUMEROS_PERMITIDOS.includes(numero);
+
+      if (textoNormalizado === "#EMERGENCIA" && autorizado) {
+        console.log("🚨 ACTIVANDO SIRENA - Usuario autorizado");
+
         await axios.get("https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc");
+
+      } else if (textoNormalizado === "#EMERGENCIA" && !autorizado) {
+        console.log("⛔ Intento NO autorizado desde:", numero);
       }
     }
 
+    // 👇 esto es OBLIGATORIO para WhatsApp
     res.sendStatus(200);
+
   } catch (error) {
-    console.log(error);
+    console.log("ERROR:", error);
     res.sendStatus(500);
   }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo"));
-
-
-
-
-
-
-
-
-
-
