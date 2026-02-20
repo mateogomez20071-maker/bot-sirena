@@ -2,12 +2,10 @@ const express = require("express");
 const axios = require("axios");
 const app = express();
 
-//saber quien
-let ultimaActivacion = null;
 
 app.use(express.json());
 
-const VERIFY_TOKEN = "mi_token_seguro"; // luego lo usarás en Meta
+const VERIFY_TOKEN = "mi_token_seguro"; 
 
 const NUMEROS_PERMITIDOS = [
   "15551739245", 
@@ -15,20 +13,51 @@ const NUMEROS_PERMITIDOS = [
   "573203126914"
 ];
 
-// verificacion de webhook
+const ADMIN_NUMEROS = [
+  "573103532444",  
+  "573203126914"   
+];
+
+// WhatsApp Cloud API
+const PHONE_NUMBER_ID = "996743346852082";
+const TOKEN = process.env.WHATSAPP_TOKEN; 
+
+const IFTTT_URL = "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
+
+
+let ultimaActivacion = null;
+
+async function enviarMensaje(numeroDestino, texto) {
+  await axios.post(
+    `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
+    {
+      messaging_product: "whatsapp",
+      to: numeroDestino,
+      text: { body: texto }
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+}
+
+// --- VERIFICACIÓN DE WEBHOOK (Meta) ---
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
   if (mode && token === VERIFY_TOKEN) {
-    res.status(200).send(challenge);
+    return res.status(200).send(challenge);
   } else {
-    res.sendStatus(403);
+    return res.sendStatus(403);
   }
 });
 
-// recibir mensajes
+// --- RECEPCIÓN DE MENSAJES ---
 app.post("/webhook", async (req, res) => {
   try {
     const entry = req.body.entry?.[0];
@@ -36,86 +65,57 @@ app.post("/webhook", async (req, res) => {
     const message = changes?.value?.messages?.[0];
 
     if (message && message.text) {
-      const texto = message.text.body;
-      const numero = message.from;
-
-      console.log("Mensaje:", texto, "De:", numero);
-
+      const texto = message.text.body || "";
+      const numero = message.from; 
       const textoNormalizado = texto.trim().toUpperCase();
       const autorizado = NUMEROS_PERMITIDOS.includes(numero);
 
-      if (textoNormalizado === "#EMERGENCIA" && autorizado) {
-        console.log("🚨 ACTIVANDO SIRENA - Usuario autorizado");
-        
-        ultimaActivacion = {
-        numero: numero,
-        fecha: new Date().toLocaleString()
-      };
+      console.log("Mensaje:", textoNormalizado, "De:", numero);
 
-        await axios.get("https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc");
+      // --- COMANDO DE EMERGENCIA ---
+      if (textoNormalizado === "#EMERGENCIA") {
+        if (autorizado) {
+          console.log("🚨 ACTIVANDO SIRENA - Usuario autorizado");
 
-      } 
-        else if (textoNormalizado === "#EMERGENCIA" && !autorizado) {
-        console.log("⛔ Intento NO autorizado desde:", numero);
-      }
+          // Guardar quién activó (solo para logs internos)
+          ultimaActivacion = {
+            numero,
+            fecha: new Date().toLocaleString()
+          };
 
-            if (textoNormalizado === "#QUIEN") {
-      
-        if (ultimaActivacion) {
-          console.log("📋 Consulta de última activación");
-      
-          const respuesta = `📋 Última activación:\nNúmero: ${ultimaActivacion.numero}\nHora: ${ultimaActivacion.fecha}`;
+          // 1) Activar sirena (IFTTT)
+          await axios.get(IFTTT_URL);
 
-          const PHONE_NUMBER_ID = "996743346852082";
-          const TOKEN = "EAANHyn3VcmUBQZBryRJeSVgWpCGvMGYUR6tA5rqLGNRYfL6wJssdPTGLaAEBJSM9UkkbOcAZAwXlZCZBvWKKsWAKoS7f3jZCd9hAeIZB1xJUpsZBJksYZCzBXeUDBGGHcO1VWtqm1bhdsszM8phZBtWLIhPM750v0bN08S8i85V9o0DCG6x30c5r4BcBL6JsCTE8wIyLtZBvSJtI7rqv0ZC6I8iALLNvm834b0ZCJ3JhZAh1WoNjJHsWGydogpB1Cm9BsN6SZA93fQameiA2Y0iIdEOwv9";
-      
-          await axios.post(
-            `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-            {
-              messaging_product: "whatsapp",
-              to: numero,
-              text: { body: respuesta }
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${TOKEN}`,
-                "Content-Type": "application/json"
-              }
-            }
-          );
-      
+          
+          const mensajeAlerta =
+            `🚨 ALERTA DE EMERGENCIA\n` +
+            `Activado por: ${numero}\n` +
+            `Hora: ${ultimaActivacion.fecha}`;
+
+          for (const admin of ADMIN_NUMEROS) {
+            await enviarMensaje(admin, mensajeAlerta);
+          }
+
         } else {
-          const respuesta = "⚠️ Aún no se ha activado la sirena.";
-      
-          await axios.post(
-            `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-            {
-              messaging_product: "whatsapp",
-              to: numero,
-              text: { body: respuesta }
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${TOKEN}`,
-                "Content-Type": "application/json"
-              }
-            }
-          );
+          // Intento no autorizado (solo log, no se responde)
+          console.log("⛔ Intento NO autorizado desde:", numero);
         }
       }
     }
 
-    // 👇 esto es OBLIGATORIO para WhatsApp
-    res.sendStatus(200);
+    // Obligatorio para WhatsApp
+    return res.sendStatus(200);
 
   } catch (error) {
-    console.log("ERROR:", error);
-    res.sendStatus(500);
+    console.log("ERROR:", error?.response?.data || error.message);
+    return res.sendStatus(500);
   }
 });
 
+// --- START SERVER ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor corriendo"));
+app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
+
 
 
 
