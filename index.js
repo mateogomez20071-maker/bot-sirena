@@ -23,6 +23,7 @@ const ADMIN_NUMEROS = [
 const PHONE_NUMBER_ID = "996743346852082";
 const TOKEN = process.env.WHATSAPP_TOKEN; 
 
+const IFTTT_OFF_URL = "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
 const IFTTT_URL = "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
 
 
@@ -111,11 +112,34 @@ app.post("/webhook", async (req, res) => {
     console.log("ERROR:", error?.response?.data || error.message);
     return res.sendStatus(500);
   }
+
+  // --- COMANDO APAGAR ---
+if (textoNormalizado === "#APAGAR") {
+  if (autorizado) {
+    console.log("🛑 APAGANDO SIRENA - Usuario autorizado");
+
+    await axios.get(IFTTT_OFF_URL);
+
+    const mensajeAlerta =
+      `🛑 SIRENA APAGADA\n` +
+      `Apagado por: ${numero}\n` +
+      `Hora: ${new Date().toLocaleString()}`;
+
+    for (const admin of ADMIN_NUMEROS) {
+      await enviarMensaje(admin, mensajeAlerta);
+    }
+
+  } else {
+    console.log("⛔ Intento NO autorizado de apagar desde:", numero);
+  }
+}
+  
 });
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
+
 
 
 
