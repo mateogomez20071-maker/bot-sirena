@@ -59,7 +59,7 @@ app.post("/webhook", async (req, res) => {
         console.log("⛔ Intento NO autorizado desde:", numero);
       }
 
-            if (textoNormalizado === "#QUIEN" && autorizado) {
+            if (textoNormalizado === "#QUIEN") {
       
         if (ultimaActivacion) {
           console.log("📋 Consulta de última activación");
@@ -116,6 +116,7 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo"));
+
 
 
 
