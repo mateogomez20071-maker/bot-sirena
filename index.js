@@ -82,7 +82,7 @@ app.post("/webhook", async (req, res) => {
           // Guardar quién activó (solo para logs internos)
           ultimaActivacion = {
             numero,
-            fecha: new Date().toLocaleString()
+            fecha: new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })
           };
 
           // 1) Activar sirena (IFTTT)
@@ -113,7 +113,7 @@ app.post("/webhook", async (req, res) => {
           const mensajeAlerta =
             `🛑 SIRENA APAGADA\n` +
             `Apagado por: ${numero}\n` +
-            `Hora: ${new Date().toLocaleString()}`;
+            `Hora: ${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })}`;
       
           for (const admin of ADMIN_NUMEROS) {
             await enviarMensaje(admin, mensajeAlerta);
@@ -140,6 +140,7 @@ app.post("/webhook", async (req, res) => {
 // --- START SERVER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
+
 
 
 
