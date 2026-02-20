@@ -2,11 +2,11 @@ const express = require("express");
 const axios = require("axios");
 const app = express();
 
-
 app.use(express.json());
 
-const VERIFY_TOKEN = "mi_token_seguro"; 
+const VERIFY_TOKEN = "mi_token_seguro";
 
+// 👥 Números que pueden usar el sistema
 const NUMEROS_PERMITIDOS = [
   "15551739245", 
   "573103532444",
@@ -14,21 +14,25 @@ const NUMEROS_PERMITIDOS = [
   "573225890435"
 ];
 
+// 👮 Administradores que reciben alertas
 const ADMIN_NUMEROS = [
   "573103532444",  
   "573203126914"   
 ];
 
-// WhatsApp Cloud API
+// 📲 WhatsApp Cloud API
 const PHONE_NUMBER_ID = "996743346852082";
-const TOKEN = process.env.WHATSAPP_TOKEN; 
+const TOKEN = process.env.WHATSAPP_TOKEN;
 
-const IFTTT_OFF_URL = "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
+// 🔌 Webhooks IFTTT
 const IFTTT_URL = "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
+const IFTTT_OFF_URL = "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
 
-
+// 📌 Guardar última activación
 let ultimaActivacion = null;
 
+
+// 📩 Función para enviar mensaje WhatsApp
 async function enviarMensaje(numeroDestino, texto) {
   await axios.post(
     `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
@@ -46,7 +50,8 @@ async function enviarMensaje(numeroDestino, texto) {
   );
 }
 
-// --- VERIFICACIÓN DE WEBHOOK (Meta) ---
+
+// 🔐 Verificación webhook Meta
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -59,7 +64,8 @@ app.get("/webhook", (req, res) => {
   }
 });
 
-// --- RECEPCIÓN DE MENSAJES ---
+
+// 📥 Recibir mensajes de WhatsApp
 app.post("/webhook", async (req, res) => {
   try {
     const entry = req.body.entry?.[0];
@@ -68,27 +74,30 @@ app.post("/webhook", async (req, res) => {
 
     if (message && message.text) {
       const texto = message.text.body || "";
-      const numero = message.from; 
+      const numero = message.from;
       const textoNormalizado = texto.trim().toUpperCase();
+
       const autorizado = NUMEROS_PERMITIDOS.includes(numero);
 
-      console.log("Mensaje:", textoNormalizado, "De:", numero);
+      console.log("📩 Mensaje:", textoNormalizado, "De:", numero);
 
-      // --- COMANDO DE EMERGENCIA ---
+      // ===============================
+      // 🚨 COMANDO EMERGENCIA
+      // ===============================
       if (textoNormalizado === "#EMERGENCIA") {
         if (autorizado) {
-          console.log("🚨 ACTIVANDO SIRENA - Usuario autorizado");
 
-          // Guardar quién activó (solo para logs internos)
+          console.log("🚨 ACTIVANDO SIRENA");
+
           ultimaActivacion = {
             numero,
-            fecha: new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })
+            fecha: new Date().toLocaleString("es-CO", {
+              timeZone: "America/Bogota"
+            })
           };
 
-          // 1) Activar sirena (IFTTT)
           await axios.get(IFTTT_URL);
 
-          
           const mensajeAlerta =
             `🚨 ALERTA DE EMERGENCIA\n` +
             `Activado por: ${numero}\n` +
@@ -99,56 +108,50 @@ app.post("/webhook", async (req, res) => {
           }
 
         } else {
-          // Intento no autorizado (solo log, no se responde)
-          console.log("⛔ Intento NO autorizado desde:", numero);
+          console.log("⛔ Usuario NO autorizado:", numero);
         }
       }
-            // --- COMANDO APAGAR ---
+
+
+      // ===============================
+      // 🛑 COMANDO APAGAR
+      // ===============================
       if (textoNormalizado === "#APAGAR") {
         if (autorizado) {
-          console.log("🛑 APAGANDO SIRENA - Usuario autorizado");
-      
+
+          console.log("🛑 APAGANDO SIRENA");
+
           await axios.get(IFTTT_OFF_URL);
-      
+
           const mensajeAlerta =
             `🛑 SIRENA APAGADA\n` +
             `Apagado por: ${numero}\n` +
-            `Hora: ${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })}`;
-      
+            `Hora: ${new Date().toLocaleString("es-CO", {
+              timeZone: "America/Bogota"
+            })}`;
+
           for (const admin of ADMIN_NUMEROS) {
             await enviarMensaje(admin, mensajeAlerta);
           }
-      
+
         } else {
-          console.log("⛔ Intento NO autorizado de apagar desde:", numero);
+          console.log("⛔ Intento NO autorizado de apagar:", numero);
         }
       }
     }
 
-    // Obligatorio para WhatsApp
+    // obligatorio para Meta
     return res.sendStatus(200);
 
   } catch (error) {
-    console.log("ERROR:", error?.response?.data || error.message);
+    console.log("❌ ERROR:", error?.response?.data || error.message);
     return res.sendStatus(500);
   }
-
-  
-  
 });
 
-// --- START SERVER ---
+
+// 🚀 Iniciar servidor
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
-
-
-
-
-
-
-
-
-
-
-
-
+app.listen(PORT, () => {
+  console.log("Servidor corriendo en puerto", PORT);
+});
