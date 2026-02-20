@@ -11,6 +11,7 @@ const NUMEROS_PERMITIDOS = [
   "15551739245", 
   "573103532444",
   "573203126914"
+  "3225890435"
 ];
 
 const ADMIN_NUMEROS = [
@@ -115,6 +116,7 @@ app.post("/webhook", async (req, res) => {
 // --- START SERVER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
+
 
 
 
