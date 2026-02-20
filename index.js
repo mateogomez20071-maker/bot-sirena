@@ -9,6 +9,7 @@ const VERIFY_TOKEN = "mi_token_seguro"; // luego lo usarás en Meta
 const NUMEROS_PERMITIDOS = [
   "15551739245", 
   "573103532444"
+  "573203126914"
 ];
 
 // verificacion de webhook
@@ -61,3 +62,4 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo"));
+
