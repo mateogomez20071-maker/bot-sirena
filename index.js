@@ -36,7 +36,7 @@ app.post("/webhook", async (req, res) => {
 
       if (numero === NUMERO_PERMITIDO && texto === "#EMERGENCIA") {
         console.log("🚨 ACTIVANDO SIRENA");
-        await axios.get("https://maker.ifttt.com/trigger/prueba/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc");
+        await axios.get("https://maker.ifttt.com/trigger/emergencia/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc");
       }
     }
 
@@ -49,5 +49,6 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo"));
+
 
 
