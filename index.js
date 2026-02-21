@@ -72,7 +72,12 @@ app.post("/webhook", async (req, res) => {
     const changes = entry?.changes?.[0];
     const message = changes?.value?.messages?.[0];
 
-    if (message && message.text) {
+    if (message &&
+        message.type === "text" &&
+        message.text &&
+        message.from &&
+        !message.from_me // evita eco del bot
+        ) {
       const texto = message.text.body || "";
       const numero = message.from;
       const textoNormalizado = texto.trim().toUpperCase();
@@ -155,3 +160,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
