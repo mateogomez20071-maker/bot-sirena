@@ -6,33 +6,42 @@ app.use(express.json());
 
 const VERIFY_TOKEN = "mi_token_seguro";
 
-// 👥 Números que pueden usar el sistema
-const NUMEROS_PERMITIDOS = [
-  "15551739245", 
-  "573103532444",
-  "573203126914",
-  "573225890435"
-];
-
-// 👮 Administradores que reciben alertas
-const ADMIN_NUMEROS = [
-  "573103532444",  
-  "573203126914"   
-];
-
 // 📲 WhatsApp Cloud API
 const PHONE_NUMBER_ID = "996743346852082";
 const TOKEN = process.env.WHATSAPP_TOKEN;
 
-// 🔌 Webhooks IFTTT
-const IFTTT_URL = "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
-const IFTTT_OFF_URL = "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc";
+// 👮 Administradores que reciben alertas
+const ADMIN_NUMEROS = [
+  "573103532444",
+  "573203126914"
+];
 
-// 📌 Guardar última activación
-let ultimaActivacion = null;
+/* ======================================================
+   👥 CLIENTES (cada numero tiene su propia sirena)
+====================================================== */
+const CLIENTES = {
+  "573103532444": {
+    nombre: "Mateo",
+    activar: "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+    apagar: "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
+  },
 
+  "573203126914": {
+    nombre: "Admin",
+    activar: "https://maker.ifttt.com/trigger/emergencia_admin/with/key/XXX",
+    apagar: "https://maker.ifttt.com/trigger/apagar_admin/with/key/XXX"
+  },
 
-// 📩 Función para enviar mensaje WhatsApp
+  "573225890435": {
+    nombre: "Juan",
+    activar: "https://maker.ifttt.com/trigger/emergencia_juan/with/key/XXX",
+    apagar: "https://maker.ifttt.com/trigger/apagar_juan/with/key/XXX"
+  }
+};
+
+/* ======================================================
+   📩 ENVIAR MENSAJE WHATSAPP
+====================================================== */
 async function enviarMensaje(numeroDestino, texto) {
   await axios.post(
     `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
@@ -50,8 +59,9 @@ async function enviarMensaje(numeroDestino, texto) {
   );
 }
 
-
-// 🔐 Verificación webhook Meta
+/* ======================================================
+   🔐 VERIFICACIÓN WEBHOOK META
+====================================================== */
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -64,88 +74,80 @@ app.get("/webhook", (req, res) => {
   }
 });
 
-
-// 📥 Recibir mensajes de WhatsApp
+/* ======================================================
+   📥 RECEPCIÓN DE MENSAJES
+====================================================== */
 app.post("/webhook", async (req, res) => {
   try {
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
     const message = changes?.value?.messages?.[0];
 
-    if (message &&
-        message.type === "text" &&
-        message.text &&
-        message.from &&
-        !message.from_me // evita eco del bot
-        ) {
+    if (
+      message &&
+      message.type === "text" &&
+      message.text &&
+      message.from
+    ) {
       const texto = message.text.body || "";
       const numero = message.from;
       const textoNormalizado = texto.trim().toUpperCase();
 
-      const autorizado = NUMEROS_PERMITIDOS.includes(numero);
-
       console.log("📩 Mensaje:", textoNormalizado, "De:", numero);
 
-      // ===============================
-      // 🚨 COMANDO EMERGENCIA
-      // ===============================
+      // 🔎 buscar cliente por numero
+      const cliente = CLIENTES[numero];
+
+      if (!cliente) {
+        console.log("⛔ Número no registrado:", numero);
+        return res.sendStatus(200);
+      }
+
+      const hora = new Date().toLocaleString("es-CO", {
+        timeZone: "America/Bogota"
+      });
+
+      /* ===============================
+         🚨 EMERGENCIA
+      =============================== */
       if (textoNormalizado === "#EMERGENCIA") {
-        if (autorizado) {
 
-          console.log("🚨 ACTIVANDO SIRENA");
+        console.log("🚨 Activando sirena de:", cliente.nombre);
 
-          ultimaActivacion = {
-            numero,
-            fecha: new Date().toLocaleString("es-CO", {
-              timeZone: "America/Bogota"
-            })
-          };
+        await axios.get(cliente.activar);
 
-          await axios.get(IFTTT_URL);
+        const mensajeAlerta =
+          `🚨 ALERTA DE EMERGENCIA\n` +
+          `Cliente: ${cliente.nombre}\n` +
+          `Activado por: ${numero}\n` +
+          `Hora: ${hora}`;
 
-          const mensajeAlerta =
-            `🚨 ALERTA DE EMERGENCIA\n` +
-            `Activado por: ${numero}\n` +
-            `Hora: ${ultimaActivacion.fecha}`;
-
-          for (const admin of ADMIN_NUMEROS) {
-            await enviarMensaje(admin, mensajeAlerta);
-          }
-
-        } else {
-          console.log("⛔ Usuario NO autorizado:", numero);
+        for (const admin of ADMIN_NUMEROS) {
+          await enviarMensaje(admin, mensajeAlerta);
         }
       }
 
-
-      // ===============================
-      // 🛑 COMANDO APAGAR
-      // ===============================
+      /* ===============================
+         🛑 APAGAR
+      =============================== */
       if (textoNormalizado === "#APAGAR") {
-        if (autorizado) {
 
-          console.log("🛑 APAGANDO SIRENA");
+        console.log("🛑 Apagando sirena de:", cliente.nombre);
 
-          await axios.get(IFTTT_OFF_URL);
+        await axios.get(cliente.apagar);
 
-          const mensajeAlerta =
-            `🛑 SIRENA APAGADA\n` +
-            `Apagado por: ${numero}\n` +
-            `Hora: ${new Date().toLocaleString("es-CO", {
-              timeZone: "America/Bogota"
-            })}`;
+        const mensajeAlerta =
+          `🛑 SIRENA APAGADA\n` +
+          `Cliente: ${cliente.nombre}\n` +
+          `Apagado por: ${numero}\n` +
+          `Hora: ${hora}`;
 
-          for (const admin of ADMIN_NUMEROS) {
-            await enviarMensaje(admin, mensajeAlerta);
-          }
-
-        } else {
-          console.log("⛔ Intento NO autorizado de apagar:", numero);
+        for (const admin of ADMIN_NUMEROS) {
+          await enviarMensaje(admin, mensajeAlerta);
         }
       }
     }
 
-    // obligatorio para Meta
     return res.sendStatus(200);
 
   } catch (error) {
@@ -154,10 +156,10 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-
-// 🚀 Iniciar servidor
+/* ======================================================
+   🚀 START SERVER
+====================================================== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
-
