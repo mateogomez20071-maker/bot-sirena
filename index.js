@@ -28,15 +28,11 @@ const CLIENTES = {
 
   "573203126914": {
     nombre: "Admin",
-    activar: "https://maker.ifttt.com/trigger/emergencia_admin/with/key/XXX",
-    apagar: "https://maker.ifttt.com/trigger/apagar_admin/with/key/XXX"
+    activar: "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+    apagar: "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
   },
 
-  "573225890435": {
-    nombre: "Juan",
-    activar: "https://maker.ifttt.com/trigger/emergencia_juan/with/key/XXX",
-    apagar: "https://maker.ifttt.com/trigger/apagar_juan/with/key/XXX"
-  }
+
 };
 
 /* ======================================================
@@ -163,3 +159,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
