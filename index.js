@@ -4,6 +4,10 @@ const app = express();
 
 app.use(express.json());
 
+/* ======================================================
+   🔐 CONFIGURACIÓN GENERAL
+====================================================== */
+
 const VERIFY_TOKEN = "mi_token_seguro";
 
 // 📲 WhatsApp Cloud API
@@ -17,35 +21,45 @@ const ADMIN_NUMEROS = [
 ];
 
 /* ======================================================
-   👥 CLIENTES (cada numero tiene su propia sirena)
+   👥 CLIENTES Y DISPOSITIVOS
+   Cada cliente tiene sus propios comandos y URLs
 ====================================================== */
+
 const CLIENTES = {
+
   "573103532444": {
     nombre: "Mateo",
-    activar: "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
-    apagar: "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+    comandos: {
+      "#EMERGENCIA": "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+      "#APAGAR": "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
 
-    ////////////////LUZ ANDREA/////////////////
-    activar: "https://maker.ifttt.com/trigger/luz_andreaON/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
-    apagar: "https://maker.ifttt.com/trigger/LUS_ANDREAOFF/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
+      "#ENCENDER": "https://maker.ifttt.com/trigger/luz_andreaON/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+      "#APAGADO": "https://maker.ifttt.com/trigger/luz_andreaOFF/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
+    }
   },
 
   "573203126914": {
     nombre: "Santiago",
-    activar: "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
-    apagar: "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
+    comandos: {
+      "#EMERGENCIA": "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+      "#APAGAR": "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
+    }
   },
-  "573107439421":{
+
+  "573107439421": {
     nombre: "Luz Andrea",
-    activar: "https://maker.ifttt.com/trigger/luz_andreaON/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
-    apagar: "https://maker.ifttt.com/trigger/LUS_ANDREAOFF/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
-  },
+    comandos: {
+      "#ENCENDER": "https://maker.ifttt.com/trigger/luz_andreaON/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+      "#APAGADO": "https://maker.ifttt.com/trigger/luz_andreaOFF/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
+    }
+  }
 
 };
 
 /* ======================================================
-   📩 ENVIAR MENSAJE WHATSAPP
+   📩 FUNCIÓN PARA ENVIAR MENSAJES POR WHATSAPP
 ====================================================== */
+
 async function enviarMensaje(numeroDestino, texto) {
   await axios.post(
     `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
@@ -66,6 +80,7 @@ async function enviarMensaje(numeroDestino, texto) {
 /* ======================================================
    🔐 VERIFICACIÓN WEBHOOK META
 ====================================================== */
+
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -79,8 +94,9 @@ app.get("/webhook", (req, res) => {
 });
 
 /* ======================================================
-   📥 RECEPCIÓN DE MENSAJES
+   📥 RECEPCIÓN DE MENSAJES DE WHATSAPP
 ====================================================== */
+
 app.post("/webhook", async (req, res) => {
   try {
     const entry = req.body.entry?.[0];
@@ -99,7 +115,7 @@ app.post("/webhook", async (req, res) => {
 
       console.log("📩 Mensaje:", textoNormalizado, "De:", numero);
 
-      // 🔎 buscar cliente por numero
+      // 🔎 buscar cliente por número
       const cliente = CLIENTES[numero];
 
       if (!cliente) {
@@ -111,97 +127,52 @@ app.post("/webhook", async (req, res) => {
         timeZone: "America/Bogota"
       });
 
-      /* ===============================
-         🚨 EMERGENCIA
-      =============================== */
-      if (textoNormalizado === "#EMERGENCIA") {
+      // 🔍 Buscar si el comando existe para ese cliente
+      const url = cliente.comandos[textoNormalizado];
 
-        console.log("🚨 Activando sirena de:", cliente.nombre);
-
-        await axios.get(cliente.activar);
-
-        const mensajeAlerta =
-          `🚨 ALERTA DE EMERGENCIA\n
-        La sirena fue activada.
-        Por favor:
-          * Verificar entorno
-          * Reportar novedades
-          \n` +
-          `Cliente: ${cliente.nombre}\n` +
-          `Activado por: ${numero}\n` +
-          `Fecha y Hora: ${hora}\n` +
-          `Sistema KAS SECURITY`;
-
-        for (const admin of ADMIN_NUMEROS) {
-          await enviarMensaje(admin, mensajeAlerta);
-        }
+      if (!url) {
+        console.log("⛔ Comando no permitido para este cliente");
+        return res.sendStatus(200);
       }
 
+      console.log(`⚡ Ejecutando ${textoNormalizado} para ${cliente.nombre}`);
+
+      // 🚀 Ejecutar acción en IFTTT / dispositivo
+      await axios.get(url);
+
       /* ===============================
-         🛑 APAGAR
+         🧠 MENSAJE SEGÚN COMANDO
       =============================== */
-      if (textoNormalizado === "#APAGAR") {
 
-        console.log("🛑 Apagando sirena de:", cliente.nombre);
+      let titulo = "";
 
-        await axios.get(cliente.apagar);
-
-        const mensajeAlerta =
-          `🛑 SIRENA APAGADA\n` +
-          `Cliente: ${cliente.nombre}\n` +
-          `Apagado por: ${numero}\n` +
-          `Fecha y Hora: ${hora}\n` +
-          `Sistema KAS SECURITY`;
-
-        for (const admin of ADMIN_NUMEROS) {
-          await enviarMensaje(admin, mensajeAlerta);
-        }
-      }
-      /* ===============================
-         ENCENDIDO LUZ ANDREA
-      =============================== */
-      if (textoNormalizado === "#ENCENDER") {
-
-        console.log("🚨 Activando Luz por:", cliente.nombre);
-
-        await axios.get(cliente.activar);
-
-        const mensajeAlerta =
-          `LUZ ENCENDIDA\n
-        La sirena fue activada.
-        Por favor:
-          * Verificar entorno
-          * Reportar novedades
-          \n` +
-          `Cliente: ${cliente.nombre}\n` +
-          `Activado por: ${numero}\n` +
-          `Fecha y Hora: ${hora}\n` +
-          `Sistema KAS SECURITY`;
-
-        for (const admin of ADMIN_NUMEROS) {
-          await enviarMensaje(admin, mensajeAlerta);
-        }
+      switch (textoNormalizado) {
+        case "#EMERGENCIA":
+          titulo = "🚨 ALERTA DE EMERGENCIA";
+          break;
+        case "#APAGAR":
+          titulo = "🛑 SIRENA APAGADA";
+          break;
+        case "#ENCENDER":
+          titulo = "💡 LUZ ENCENDIDA";
+          break;
+        case "#APAGADO":
+          titulo = "💡 LUZ APAGADA";
+          break;
+        default:
+          titulo = "🔔 EVENTO EJECUTADO";
       }
 
-      /* ===============================
-         🛑 APAGAR LUZ ANDREA
-      =============================== */
-      if (textoNormalizado === "#APAGADO") {
+      const mensajeFinal =
+        `${titulo}\n\n` +
+        `Cliente: ${cliente.nombre}\n` +
+        `Número: ${numero}\n` +
+        `Fecha y Hora: ${hora}\n\n` +
+        `Sistema KAS SECURITY`;
 
-        console.log("🛑 Apagando luz por:", cliente.nombre);
-
-        await axios.get(cliente.apagar);
-
-        const mensajeAlerta =
-          `🛑 LUZ APAGADA\n` +
-          `Cliente: ${cliente.nombre}\n` +
-          `Apagado por: ${numero}\n` +
-          `Fecha y Hora: ${hora}\n` +
-          `Sistema KAS SECURITY`;
-
-        for (const admin of ADMIN_NUMEROS) {
-          await enviarMensaje(admin, mensajeAlerta);
-        }
+      // 📲 Enviar alerta a todos los administradores
+      for (const admin of ADMIN_NUMEROS) {
+        await enviarMensaje(admin, mensajeFinal);
       }
     }
 
@@ -213,25 +184,11 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-      
 /* ======================================================
    🚀 START SERVER
 ====================================================== */
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
