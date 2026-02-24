@@ -31,7 +31,10 @@ const CLIENTES = {
     activar: "https://maker.ifttt.com/trigger/emergencia2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
     apagar: "https://maker.ifttt.com/trigger/apagar2/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
   },
-
+  "573107439421":{
+    nombre: "Luz Andrea",
+    activar: "https://maker.ifttt.com/trigger/luz_andreaON/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+  },
 
 };
 
@@ -159,6 +162,31 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
+      /* ===============================
+         ENCENDIDO LUZ ANDREA
+      =============================== */
+      if (textoNormalizado === "#ENCENDER") {
+
+        console.log("🚨 Activando Luz de:", cliente.nombre);
+
+        await axios.get(cliente.activar);
+
+        const mensajeAlerta =
+          `🚨 ALERTA DE EMERGENCIA\n
+        La sirena fue activada.
+        Por favor:
+          * Verificar entorno
+          * Reportar novedades
+          \n` +
+          `Cliente: ${cliente.nombre}\n` +
+          `Activado por: ${numero}\n` +
+          `Fecha y Hora: ${hora}\n` +
+          `Sistema KAS SECURITY`;
+
+        for (const admin of ADMIN_NUMEROS) {
+          await enviarMensaje(admin, mensajeAlerta);
+        }
+      }
 /* ======================================================
    🚀 START SERVER
 ====================================================== */
@@ -166,6 +194,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
 
 
 
