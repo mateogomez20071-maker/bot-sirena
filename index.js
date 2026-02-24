@@ -113,7 +113,15 @@ app.post("/webhook", async (req, res) => {
         await axios.get(cliente.activar);
 
         const mensajeAlerta =
-          `🚨 ALERTA DE EMERGENCIA\n` +
+          `🚨 ALERTA DE EMERGENCIA\n
+              La sirena fue activada.
+    
+              Por favor:
+              * Verificar entorno
+              * Reportar novedades
+              
+              Sistema KAS SECURITY\n` +
+          
           `Cliente: ${cliente.nombre}\n` +
           `Activado por: ${numero}\n` +
           `Hora: ${hora}`;
@@ -159,5 +167,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
 
 
