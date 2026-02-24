@@ -34,6 +34,7 @@ const CLIENTES = {
   "573107439421":{
     nombre: "Luz Andrea",
     activar: "https://maker.ifttt.com/trigger/luz_andreaON/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc",
+    apagar: "https://maker.ifttt.com/trigger/LUS_ANDREAOFF/with/key/ivVS-BxbsnXnCFQxRK-rYyVbBEPRxtazsVIaZFl1WCc"
   },
 
 };
@@ -152,16 +153,7 @@ app.post("/webhook", async (req, res) => {
           await enviarMensaje(admin, mensajeAlerta);
         }
       }
-    }
-
-    return res.sendStatus(200);
-
-  } catch (error) {
-    console.log("❌ ERROR:", error?.response?.data || error.message);
-    return res.sendStatus(500);
-  }
-
-  /* ===============================
+      /* ===============================
          ENCENDIDO LUZ ANDREA
       =============================== */
       if (textoNormalizado === "#ENCENDER") {
@@ -186,6 +178,35 @@ app.post("/webhook", async (req, res) => {
           await enviarMensaje(admin, mensajeAlerta);
         }
       }
+
+      /* ===============================
+         🛑 APAGAR LUZ ANDREA
+      =============================== */
+      if (textoNormalizado === "#APAGADO") {
+
+        console.log("🛑 Apagando luz de:", cliente.nombre);
+
+        await axios.get(cliente.apagar);
+
+        const mensajeAlerta =
+          `🛑 LUZ APAGADA\n` +
+          `Cliente: ${cliente.nombre}\n` +
+          `Apagado por: ${numero}\n` +
+          `Fecha y Hora: ${hora}\n` +
+          `Sistema KAS SECURITY`;
+
+        for (const admin of ADMIN_NUMEROS) {
+          await enviarMensaje(admin, mensajeAlerta);
+        }
+      }
+    }
+
+    return res.sendStatus(200);
+
+  } catch (error) {
+    console.log("❌ ERROR:", error?.response?.data || error.message);
+    return res.sendStatus(500);
+  }
 });
 
       
@@ -196,6 +217,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
 
 
 
