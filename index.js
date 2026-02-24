@@ -121,7 +121,7 @@ app.post("/webhook", async (req, res) => {
             * Reportar novedades\n` +
           `Cliente: ${cliente.nombre}\n` +
           `Activado por: ${numero}\n` +
-          `Fecha y Hora: ${hora}\n`
+          `Fecha y Hora: ${hora}\n` +
           `Sistema KAS SECURITY`;
 
         for (const admin of ADMIN_NUMEROS) {
@@ -142,8 +142,8 @@ app.post("/webhook", async (req, res) => {
           `🛑 SIRENA APAGADA\n` +
           `Cliente: ${cliente.nombre}\n` +
           `Apagado por: ${numero}\n` +
-          `Fecha y Hora: ${hora}`;
-          `Sistema KAS SECURITY`
+          `Fecha y Hora: ${hora}` +
+          `Sistema KAS SECURITY`;
 
         for (const admin of ADMIN_NUMEROS) {
           await enviarMensaje(admin, mensajeAlerta);
@@ -166,6 +166,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
 
 
 
