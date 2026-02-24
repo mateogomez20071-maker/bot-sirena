@@ -160,9 +160,8 @@ app.post("/webhook", async (req, res) => {
     console.log("❌ ERROR:", error?.response?.data || error.message);
     return res.sendStatus(500);
   }
-});
 
-      /* ===============================
+  /* ===============================
          ENCENDIDO LUZ ANDREA
       =============================== */
       if (textoNormalizado === "#ENCENDER") {
@@ -187,6 +186,9 @@ app.post("/webhook", async (req, res) => {
           await enviarMensaje(admin, mensajeAlerta);
         }
       }
+});
+
+      
 /* ======================================================
    🚀 START SERVER
 ====================================================== */
@@ -194,6 +196,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
 
 
 
