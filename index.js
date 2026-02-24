@@ -162,12 +162,12 @@ app.post("/webhook", async (req, res) => {
       =============================== */
       if (textoNormalizado === "#ENCENDER") {
 
-        console.log("🚨 Activando Luz de:", cliente.nombre);
+        console.log("🚨 Activando Luz por:", cliente.nombre);
 
         await axios.get(cliente.activar);
 
         const mensajeAlerta =
-          `🚨 ALERTA DE EMERGENCIA\n
+          `LUZ ENCENDIDA\n
         La sirena fue activada.
         Por favor:
           * Verificar entorno
@@ -188,7 +188,7 @@ app.post("/webhook", async (req, res) => {
       =============================== */
       if (textoNormalizado === "#APAGADO") {
 
-        console.log("🛑 Apagando luz de:", cliente.nombre);
+        console.log("🛑 Apagando luz por:", cliente.nombre);
 
         await axios.get(cliente.apagar);
 
@@ -221,6 +221,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
 
 
 
